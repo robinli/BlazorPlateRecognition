@@ -8,6 +8,22 @@
 - Azure Computer Vision
 
 
+## First Step before Run
+
+Add your Computer Vision subscription key and endpoint
+
+```
+namespace ImageResizeOCRBlazorWasm.Server
+{
+    public class ImageRecognizer
+    {
+        // Add your Computer Vision subscription key and endpoint
+        static string subscriptionKey = "YOUR_KEY_1";
+        static string endpoint = "YOUR_Endpoint";
+	}	
+}
+```
+
 ## Reference
 
 - [Blazor: Resize and Upload Image Files](https://www.prowaretech.com/articles/current/blazor/wasm/resize-and-upload-image-files).
