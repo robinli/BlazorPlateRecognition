@@ -5,6 +5,7 @@
 - Visual Studio 2022
 - Blazor Web Assembly Project
 - .NET 6
+- Azure Computer Vision
 
 
 ## Reference
