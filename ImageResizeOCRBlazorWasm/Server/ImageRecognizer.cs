@@ -86,11 +86,14 @@ namespace ImageResizeOCRBlazorWasm.Server
             {
                 return 0;
             }
+
             List<Point> points = new List<Point>();
             for(int i = 0; i < boundingBox.Count; i+=2)
             {
                 points.Add(new Point { X = Convert.ToInt32(boundingBox[i]), Y = Convert.ToInt32(boundingBox[i+1]) });
             }
+            points.Add(points[0]);
+
             var area = Math.Abs(points.Take(points.Count - 1)
                .Select((p, i) => (points[i + 1].X - p.X) * (points[i + 1].Y + p.Y))
                .Sum() / 2);
