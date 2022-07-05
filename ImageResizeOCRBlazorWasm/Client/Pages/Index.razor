@@ -1,0 +1,86 @@
+﻿@page "/"
+@using ImageResizeOCRBlazorWasm.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+
+<h1>Plate recognition</h1>
+
+<InputFile class="form-control" multiple OnChange="OnChange" accept="image/png, image/jpeg, image/gif" id="inputFile" />
+<hr/>
+<video id="videoFeed" width="320" height="240" @onclick="CaptureFrame"/><canvas class="d-none" id="currentFrame" width="320" height="240" /><br />
+<button class="btn btn-primary mt-2" @onclick="CaptureFrame">Capture Frame</button>
+<hr />
+@if(filesBase64!=null)
+{
+	<img src="data:@filesBase64.contentType;base64,@filesBase64.base64data" />
+	<br/>
+	<button class="btn btn-primary mt-2" @onclick="Upload">Recognition</button>
+}
+<hr />
+<h1>車牌號碼: @message</h1>
+
+@code {
+	ImageFile? filesBase64 { get; set; }
+	string message = "";
+	bool isDisabled = false;
+
+
+	async Task OnChange(InputFileChangeEventArgs e)
+	{
+		message = "";
+		var file = e.GetMultipleFiles().FirstOrDefault();
+		if (file != null)
+		{
+			var resizedFile = await file.RequestImageFileAsync(file.ContentType, 320, 240); // resize the image file
+			var buf = new byte[resizedFile.Size]; // allocate a buffer to fill with the file's data
+			using (var stream = resizedFile.OpenReadStream())
+			{
+				await stream.ReadAsync(buf); // copy the stream to the buffer
+			}
+			filesBase64 = new ImageFile { base64data = Convert.ToBase64String(buf), contentType = file.ContentType, fileName = file.Name }; // convert to a base64 string!!
+		}
+	}
+
+	async Task Upload()
+	{
+		if (filesBase64 == null)
+		{
+			return;
+		}
+
+		isDisabled = true;
+		using (var msg = await Http.PostAsJsonAsync<ImageFile>("/api/upload", filesBase64, System.Threading.CancellationToken.None))
+		{
+			isDisabled = false;
+			if (msg.IsSuccessStatusCode)
+			{
+				message = await msg.Content.ReadAsStringAsync();
+				filesBase64 = null;
+			}
+		}
+	}
+
+
+	private string frameUri;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("startVideo", "videoFeed");
+    }
+
+    private async Task CaptureFrame()
+    {
+        await JSRuntime.InvokeAsync<String>("getFrame", "videoFeed", "currentFrame", DotNetObjectReference.Create(this));
+    }
+
+
+    [JSInvokable]
+    public void ProcessImage(string imageString)
+    {
+        byte[] imageData = Convert.FromBase64String(imageString.Split(',')[1]);
+		filesBase64 = new ImageFile { base64data = Convert.ToBase64String(imageData), contentType = "image/jpeg", fileName = "0.jpg" };
+    }
+}
+
+
